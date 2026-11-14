@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Vehicle Service 읽기 권한: 기어, 브레이크, 조향(CAR_DRIVE), 깜빡이(CAR_LIGHTS) -->
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
+    <uses-permission android:name="pleos.car.permission.CAR_POWERTRAIN" />
+    <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
+    <!-- 날씨 연수: 와이퍼(창문 영역)와 경고등(안개등·ESC) -->
+    <uses-permission android:name="pleos.car.permission.CAR_WINDOWS" />
+    <uses-permission android:name="pleos.car.permission.CAR_SAFETY" />
+    <uses-permission android:name="pleos.car.permission.PRIVATE_CAR_SAFETY" />
+    <!-- 잘한 동작 직후 앰비언트 라이트 피드백. 실차에서는 앱 마켓 승인 여부를 확인해야 합니다. -->
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_LIGHTS" />
+    <!-- 내비에게 현재 위치의 주소를 묻습니다(NaviHelper.getCurrentLocationInfo). -->
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+    <!-- 표준 AAOS 속도(PERF_VEHICLE_SPEED). 런타임 권한입니다. -->
+    <uses-permission android:name="android.car.permission.CAR_SPEED" />
+    <!-- 차종·차체 치수(INFO_MAKE·MODEL·EXTERIOR_DIMENSIONS) -->
+    <uses-permission android:name="android.car.permission.CAR_INFO" />
+    <!-- 같은 교차로를 알아보는 데만 씁니다. 위치는 기기 안에만 저장합니다. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- 화면 뒤에서도 신호를 받기 위한 포그라운드 서비스 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="true" />
+
+    <application
+        android:name=".DriveFormApp"
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".DriveService"
+            android:exported="false"
+            android:foregroundServiceType="location|specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Analyzes steering, brake and turn-signal data while driving to coach turn and lane-change technique." />
+        </service>
+    </application>
+
+</manifest>
