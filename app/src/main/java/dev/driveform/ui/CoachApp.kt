@@ -400,7 +400,7 @@ private fun SkillPane(state: UiState) {
                     if (left > 0) {
                         BigNumber("$left", size = 64)
                         Spacer(Modifier.width(12.dp))
-                        Text(if (grad.graduated) "과목 남았어요" else "기본기 남았어요", color = Coach.Text, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 6.dp))
+                        Text(if (grad.graduated) "과정 남았어요" else "기본기 남았어요", color = Coach.Text, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 6.dp))
                     } else {
                         Text(if (grad.graduated) "심화 과정도 모두 마쳤어요" else "초보 졸업!", color = Coach.Accent, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
                     }

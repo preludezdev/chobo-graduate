@@ -8,7 +8,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.ApplicationInfo
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
@@ -316,12 +315,12 @@ class DriveFormApp : Application(), CarSignals.Listener {
 
     /**
      * 시연용 입구. 에뮬레이터 내비는 경로가 진행되지 않아 주의 지점·단속 카메라 알림이 오지 않으므로,
-     * 디버그 빌드에서만 adb로 내비와 같은 모양의 알림을 넣을 수 있게 합니다.
+     * 시연 도구가 켜진 빌드(BuildConfig.DEMO_TOOLS)에서만 adb로 내비와 같은 모양의 알림을 넣을 수 있게 합니다.
      *   adb shell am broadcast --user 10 -a dev.driveform.DEMO_ROAD -p dev.driveform --es kind camera --ei distance 150 --ei limit 50
      * kind: bump(과속방지턱), camera(단속 카메라), rail(철길 건널목), school(어린이 보호구역)
      */
     private fun registerDemoReceiver() {
-        if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) return
+        if (!BuildConfig.DEMO_TOOLS) return
         var count = 0
         ContextCompat.registerReceiver(this, object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {

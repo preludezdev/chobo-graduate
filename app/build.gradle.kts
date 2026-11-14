@@ -16,6 +16,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        // 심사·시연용 입구(시연 기록 넣기, 내비 알림 흉내)를 release에서도 켭니다. 출시 빌드에서는 false로 둡니다.
+        buildConfigField("boolean", "DEMO_TOOLS", "true")
     }
 
     buildTypes {
@@ -35,6 +37,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {

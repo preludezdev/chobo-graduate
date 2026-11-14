@@ -24,8 +24,12 @@
 
 ## APK
 
-- **다운로드**: [Releases](../../releases/latest)의 `chobo-graduate-0.1.0.apk`
-- 디버그 서명 APK입니다. 아래 ‘시연 기록 넣기’ 명령이 디버그 빌드에서만 동작하기 때문입니다.
+- **위치**: 저장소의 [`apk/정태휘_초보졸업_release.apk`](apk/) (release 빌드, 약 48MB). 같은 파일을 [Releases](../../releases/latest)에도 올려 두었습니다.
+- 별도 서명 키 없이 설치할 수 있도록 디버그 키로 서명했고, 심사용 ‘시연 기록 넣기’ 명령이 동작하도록 시연 도구(`BuildConfig.DEMO_TOOLS`)를 켜 두었습니다.
+
+## 시연 영상
+
+- `docs/초보졸업_시연영상.mp4` (1분 52초): 앱 둘러보기 → Virtual Console로 실시간 주행 → 초보 졸업 → 방금 주행 다시보기
 
 ## 테스트 환경
 
@@ -44,7 +48,7 @@
 Pleos Connect 에뮬레이터를 켠 뒤:
 
 ```bash
-adb install -r -g chobo-graduate-0.1.0.apk
+adb install -r -g 정태휘_초보졸업_release.apk
 adb shell am start --user 10 -n dev.driveform/.ui.MainActivity
 ```
 
@@ -70,7 +74,7 @@ adb shell am broadcast --user 10 -a dev.driveform.DEMO_SEED -p dev.driveform
 
 ### 3. Virtual Console로 직접 운전해 보기
 
-Virtual Console에서 기어 D → 속도를 올리고 → 깜빡이를 켠 뒤 핸들을 돌려 회전 → 기어 P. P에 두면 방금 운전의 다시 볼 장면이 ‘오늘 코칭’에 나옵니다. 내비 알림(방지턱·카메라 등)은 다음 명령으로 흉내 낼 수 있습니다(디버그 빌드).
+Virtual Console에서 기어 D → 속도를 올리고 → 깜빡이를 켠 뒤 핸들을 돌려 회전 → 기어 P. P에 두면 방금 운전의 다시 볼 장면이 ‘오늘 코칭’에 나옵니다. 내비 알림(방지턱·카메라 등)은 다음 명령으로 흉내 낼 수 있습니다.
 
 ```bash
 adb shell am broadcast --user 10 -a dev.driveform.DEMO_ROAD -p dev.driveform --es kind camera --ei distance 150 --ei limit 50
@@ -79,7 +83,7 @@ adb shell am broadcast --user 10 -a dev.driveform.DEMO_ROAD -p dev.driveform --e
 ## 직접 빌드
 
 ```bash
-./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleRelease      # app/build/outputs/apk/release/app-release.apk
 ./gradlew testDebugUnitTest    # 단위 테스트 82개
 ```
 

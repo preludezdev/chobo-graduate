@@ -13,3 +13,6 @@ local.properties
 
 # 개발 중 찍은 화면(README용은 docs/screens)
 screenshots/
+
+# 제출용 APK는 저장소에 둡니다
+!apk/*.apk
