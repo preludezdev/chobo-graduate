@@ -24,7 +24,7 @@
 
 ## APK
 
-- **위치**: 저장소의 [`apk/정태휘_초보졸업_release.apk`](apk/) (release 빌드, 약 48MB). 같은 파일을 [Releases](../../releases/latest)에도 올려 두었습니다.
+- **위치**: 저장소의 [`apk/정태휘_초보졸업_release.apk`](apk/) (release 빌드, 약 48MB). 같은 파일을 [Releases](../../releases/latest)에도 `JeongTaehwi_chobo-graduate_release.apk`로 올려 두었습니다(Releases는 한글 파일 이름을 지원하지 않습니다).
 - 별도 서명 키 없이 설치할 수 있도록 디버그 키로 서명했고, 심사용 ‘시연 기록 넣기’ 명령이 동작하도록 시연 도구(`BuildConfig.DEMO_TOOLS`)를 켜 두었습니다.
 
 ## 시연 영상
@@ -48,7 +48,7 @@
 Pleos Connect 에뮬레이터를 켠 뒤:
 
 ```bash
-adb install -r -g 정태휘_초보졸업_release.apk
+adb install -r -g apk/정태휘_초보졸업_release.apk
 adb shell am start --user 10 -n dev.driveform/.ui.MainActivity
 ```
 
