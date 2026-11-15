@@ -17,6 +17,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.FilterQuality
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextMeasurer
@@ -154,6 +157,17 @@ private class Cam(cx: Float, cy: Float, extent: Float, keys: List<V2>, area: Rec
 
     /** 땅 위 [v](경로 좌표)에서 1m가 화면에서 몇 px인지. */
     fun ppm(v: V2): Float = s / zc(view(v.x, v.y).y, 0f).coerceAtLeast(1f)
+}
+
+/** 쏠림 게이지 색: 초록(약함) → 노랑 → 빨강(셈). */
+private val GaugeGreen = Color(0xFF3DDC84)
+private val GaugeYellow = Color(0xFFFFC94A)
+private val GaugeRed = Color(0xFFFF5A5F)
+private fun gaugeColor(t: Float): Color = if (t < 0.5f) lerp(GaugeGreen, GaugeYellow, t / 0.5f) else lerp(GaugeYellow, GaugeRed, ((t - 0.5f) / 0.4f).coerceAtMost(1f))
+
+/** 다시보기 표현 고르기(비교용). turnGauge: "A" 따로 된 원형 게이지, "B" 핸들 테두리가 게이지. */
+internal object ReplayStyle {
+    @Volatile var turnGauge: String = "B"
 }
 
 private data class Layer(val path: Path, val color: Color, val style: Stroke?)
@@ -478,7 +492,11 @@ private class ReplayScene(val move: MoveForm, junctions: List<dev.driveform.form
     private fun steerAt(now: Long): Float {
         val st = move.steering
         val i = st.indexOfLast { it.ms <= now }
-        if (i < 0) return st.firstOrNull()?.value ?: 0f
+        if (i < 0) {
+            // 장면 기록은 핸들이 가운데를 벗어난 뒤부터라, 그 전(곧게 오던 길)은 가운데로 보고 첫 기록으로 0.3초 동안 이어 줍니다.
+            val first = st.firstOrNull() ?: return 0f
+            return first.value * ((now - (first.ms - 300)).toFloat() / 300f).coerceIn(0f, 1f)
+        }
         val a = st[i]; val b = st.getOrNull(i + 1) ?: return a.value
         val from = maxOf(a.ms, b.ms - 300)
         if (now <= from) return a.value
@@ -502,9 +520,10 @@ private class ReplayScene(val move: MoveForm, junctions: List<dev.driveform.form
     }
 
     /**
-     * 장면 카드(왼쪽 아래): 돌아가는 핸들과 각도, 그리고 쏠림을 '물컵'으로 보여 줍니다.
-     * 숫자(g) 대신 컵 속 물이 얼마나 기울고 출렁이는지로 몸이 느끼는 정도를 보여 줍니다.
-     * 0.25g 아래는 잔잔, 0.35g 아래는 출렁, 그 위는 넘침. 주차는 핸들을 몇 바퀴 감았는지 보여 줍니다.
+     * 장면 카드(왼쪽 아래): 돌아가는 핸들과 각도, 그리고 쏠림을 숫자 없이 색으로 보여 줍니다.
+     * 정지·출발은 페달처럼 아래에서 위로 차는 세로 막대, 회전·차선 변경은 원형 게이지([ReplayStyle.turnGauge]: A 따로, B 핸들 테두리).
+     * 색은 아래(약함) 초록 → 노랑 → 빨강(셈). 0.25g 아래는 부드럽게, 0.35g 아래는 조금 세게, 그 위는 급하게.
+     * 주차는 핸들을 몇 바퀴 감았는지 보여 줍니다.
      */
     private fun sceneCard(d: DrawScope, now: Long, idx: Int, measurer: TextMeasurer) = with(d) {
         val steer = steerAt(now)
@@ -512,18 +531,22 @@ private class ReplayScene(val move: MoveForm, junctions: List<dev.driveform.form
         val w = 640.dp.toPx(); val h = 250.dp.toPx()
         val o = Offset(20.dp.toPx(), size.height - h - 20.dp.toPx())
         drawRoundRect(Coach.Bg.copy(alpha = 0.92f), o, Size(w, h), CornerRadius(24.dp.toPx()))
-        // 핸들: 왼쪽으로 돌리면 반시계로 돕니다.
-        val c = Offset(o.x + 104.dp.toPx(), o.y + h / 2); val r = 70.dp.toPx()
-        drawCircle(Coach.Text2, r, c, style = Stroke(11.dp.toPx()))
-        val a = Math.toRadians(-steer.toDouble())
-        for (t in listOf(0.0, 2.2, -2.2)) {
-            val ang = a + t + Math.PI / 2
-            drawLine(Coach.Text2, c, Offset(c.x + (cos(ang) * r).toFloat(), c.y + (sin(ang) * r).toFloat()), 10.dp.toPx(), cap = StrokeCap.Round)
-        }
-        drawCircle(Coach.Text2, 13.dp.toPx(), c)
-        drawCircle(Coach.Accent, 13.dp.toPx(), Offset(c.x + (cos(a - Math.PI / 2) * r).toFloat(), c.y + (sin(a - Math.PI / 2) * r).toFloat()))
         val dir = when { steer > 5f -> "왼쪽 "; steer < -5f -> "오른쪽 "; else -> "" }
         val wheelText = "핸들 $dir${abs(steer).roundToInt()}°"
+        val c = Offset(o.x + 104.dp.toPx(), o.y + h / 2); val r = 70.dp.toPx()
+        // 쏠림(크기)과 지금까지 가장 컸던 값
+        val g = if (park) 0f else abs(pushAt(now, idx, side))
+        val peak = when {
+            park -> 0f
+            side -> (0..idx.coerceAtLeast(0)).maxOfOrNull { latG.getOrElse(it) { 0f } } ?: 0f
+            else -> { val k = ((now - lonT0) / lonStepMs).toInt().coerceIn(0, lonG.size - 1); (0..k).maxOf { abs(lonG[it]) } }
+        }
+        fun frac(v: Float) = (v / 0.5f).coerceIn(0f, 1f)          // 0.5g를 끝으로
+        val ringOnWheel = side && ReplayStyle.turnGauge == "B"
+        // 게이지가 차는 방향: 왼쪽으로 돌면(몸은 오른쪽으로 쏠림) 아래에서 오른쪽 위로(반시계), 오른쪽으로 돌면 반대로.
+        val gSigned = if (park || !side) 0f else pushAt(now, idx, true)
+        val leftTurn = if (abs(gSigned) > 0.02f) gSigned > 0 else move.side != Side.RIGHT
+        drawWheel(c, r, steer, gauge = if (ringOnWheel) frac(g) else null, peak = if (ringOnWheel) frac(peak) else null, ccw = leftTurn)
         if (park) {
             val x = o.x + 210.dp.toPx()
             drawText(measurer.measure(wheelText, TextStyle(color = Coach.Text, fontSize = 36.sp, fontWeight = FontWeight.Bold)), topLeft = Offset(x, o.y + 28.dp.toPx()))
@@ -535,53 +558,81 @@ private class ReplayScene(val move: MoveForm, junctions: List<dev.driveform.form
             drawText(measurer.measure("끝까지 감으면 1.5바퀴", TextStyle(color = Coach.Muted, fontSize = 22.sp)), topLeft = Offset(bx, by + 24.dp.toPx()))
             return@with
         }
-        // 물컵
-        val g = pushAt(now, idx, side)
-        val mag = abs(g)
+        // 게이지
+        var x = o.x + 210.dp.toPx()
+        if (!side) {
+            // 세로 페달 막대
+            val bw = 30.dp.toPx(); val top = o.y + 26.dp.toPx(); val bh = h - 52.dp.toPx(); val bx = o.x + 212.dp.toPx()
+            drawRoundRect(Coach.Track, Offset(bx, top), Size(bw, bh), CornerRadius(8.dp.toPx()))
+            val fh = bh * frac(g)
+            if (fh > 0.5f) clipRect(bx, top + bh - fh, bx + bw, top + bh) {
+                drawRoundRect(Brush.verticalGradient(listOf(GaugeRed, GaugeYellow, GaugeGreen), startY = top, endY = top + bh), Offset(bx, top), Size(bw, bh), CornerRadius(8.dp.toPx()))
+            }
+            val py = top + bh * (1 - frac(peak))
+            if (peak > 0.02f) drawLine(Coach.Text, Offset(bx - 5.dp.toPx(), py), Offset(bx + bw + 5.dp.toPx(), py), 3.dp.toPx())
+            listOf(0.15f to "살짝", 0.6f to "세게", 0.9f to "급").forEach { (f, t) ->
+                val l = measurer.measure(t, TextStyle(color = Coach.Faint, fontSize = 16.sp))
+                drawText(l, topLeft = Offset(bx + bw + 10.dp.toPx(), top + bh * (1 - f) - l.size.height / 2))
+            }
+            x = o.x + 300.dp.toPx()
+        } else if (!ringOnWheel) {
+            // A: 따로 된 원형 게이지(270°)
+            val gc = Offset(o.x + 268.dp.toPx(), o.y + h / 2); val gr = 44.dp.toPx(); val sw = 14.dp.toPx()
+            drawGaugeArc(gc, gr, sw, frac(g), frac(peak))
+            val l = measurer.measure("옆", TextStyle(color = Coach.Muted, fontSize = 20.sp, fontWeight = FontWeight.SemiBold))
+            drawText(l, topLeft = Offset(gc.x - l.size.width / 2, gc.y - l.size.height / 2))
+            x = o.x + 336.dp.toPx()
+        }
         fun level(v: Float) = when { v < 0.25f -> 0; v < 0.35f -> 1; else -> 2 }
-        val lv = level(mag)
-        val peak = if (side) (0..idx.coerceAtLeast(0)).maxOfOrNull { latG.getOrElse(it) { 0f } } ?: 0f
-        else { val k = ((now - lonT0) / lonStepMs).toInt().coerceIn(0, lonG.size - 1); (0..k).maxOf { abs(lonG[it]) } }
-        val water = if (lv == 0) Coach.Accent else Coach.Amber
-        val cx = o.x + 262.dp.toPx(); val cupW = 78.dp.toPx(); val cupH = 104.dp.toPx()
-        val top = o.y + (h - cupH) / 2 + 6.dp.toPx(); val bottom = top + cupH
-        val inset = 9.dp.toPx() // 아래가 조금 좁은 컵
-        val cup = Path().apply { moveTo(cx - cupW / 2, top); lineTo(cx - cupW / 2 + inset, bottom); lineTo(cx + cupW / 2 - inset, bottom); lineTo(cx + cupW / 2, top) }
-        // 물: 기울기 = 쏠림을 보기 좋게 키운 각도. +면 오른쪽이 높아집니다.
-        val tilt = (atan(g * 1.8f)).coerceIn(-0.7f, 0.7f)
-        val fill = top + cupH * 0.38f
-        val halfW = cupW / 2 - inset / 2
-        val yl = fill + kotlin.math.tan(tilt) * halfW; val yr = fill - kotlin.math.tan(tilt) * halfW
-        clipPath(cup) {
-            val waterPath = Path().apply {
-                moveTo(cx - cupW, yl + kotlin.math.tan(tilt) * cupW / 2); lineTo(cx + cupW, yr - kotlin.math.tan(tilt) * cupW / 2)
-                lineTo(cx + cupW, bottom + 4f); lineTo(cx - cupW, bottom + 4f); close()
-            }
-            drawPath(waterPath, water.copy(alpha = 0.85f))
-        }
-        drawPath(cup, Coach.Text2, style = Stroke(5.dp.toPx(), join = androidx.compose.ui.graphics.StrokeJoin.Round, cap = StrokeCap.Round))
-        if (lv == 2) { // 넘침: 높은 쪽 가장자리로 물방울
-            val sx = if (tilt > 0) cx + cupW / 2 else cx - cupW / 2
-            val sgn = if (tilt > 0) 1f else -1f
-            listOf(Triple(6f, -10f, 6f), Triple(16f, -2f, 4.5f), Triple(10f, 10f, 3.5f)).forEach { (dx, dy, rr) ->
-                drawCircle(Coach.Amber, rr.dp.toPx(), Offset(sx + sgn * dx.dp.toPx(), top + dy.dp.toPx()))
-            }
-        }
-        // 글
-        val x = o.x + 330.dp.toPx()
-        drawText(measurer.measure(wheelText, TextStyle(color = Coach.Text, fontSize = 34.sp, fontWeight = FontWeight.Bold)), topLeft = Offset(x, o.y + 26.dp.toPx()))
+        val lv = level(g); val pl = level(peak)
+        val now3 = arrayOf("부드럽게", "조금 세게", "급하게")
+        val col = arrayOf(GaugeGreen, GaugeYellow, GaugeRed)
         val what = when {
-            side -> "옆으로 쏠려요"
-            g > 0.03f -> "브레이크"
-            g < -0.03f -> "가속"
+            side -> "옆으로 쏠림"
+            pushAt(now, idx, false) > 0.03f -> "브레이크"
+            pushAt(now, idx, false) < -0.03f -> "가속"
             else -> "그대로 가는 중"
         }
-        val state = arrayOf("물컵이 잔잔해요", "물이 출렁여요", "물이 넘쳐요")[lv]
+        drawText(measurer.measure(wheelText, TextStyle(color = Coach.Text, fontSize = 34.sp, fontWeight = FontWeight.Bold)), topLeft = Offset(x, o.y + 26.dp.toPx()))
         drawText(measurer.measure(what, TextStyle(color = Coach.Muted, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)), topLeft = Offset(x, o.y + 88.dp.toPx()))
-        drawText(measurer.measure(state, TextStyle(color = if (lv == 0) Coach.AccentSoft else Coach.AmberSoft, fontSize = 30.sp, fontWeight = FontWeight.Bold)), topLeft = Offset(x, o.y + 120.dp.toPx()))
-        val pl = level(peak)
-        val peakText = arrayOf("가장 셀 때도 잔잔했어요", "가장 셀 때 출렁였어요", "가장 셀 때 넘쳤어요")[pl]
-        drawText(measurer.measure(peakText, TextStyle(color = if (pl == 0) Coach.Muted else Coach.AmberSoft, fontSize = 22.sp)), topLeft = Offset(x, o.y + 178.dp.toPx()))
+        drawText(measurer.measure(now3[lv], TextStyle(color = col[lv], fontSize = 30.sp, fontWeight = FontWeight.Bold)), topLeft = Offset(x, o.y + 120.dp.toPx()))
+        drawText(measurer.measure("가장 셀 때 ${arrayOf("부드러웠어요", "조금 셌어요", "급했어요")[pl]}", TextStyle(color = if (pl == 0) Coach.Muted else col[pl], fontSize = 22.sp)), topLeft = Offset(x, o.y + 178.dp.toPx()))
+    }
+
+    /** 핸들(왼쪽으로 돌리면 반시계). [gauge]가 있으면 테두리가 원형 게이지가 됩니다(B). */
+    private fun DrawScope.drawWheel(c: Offset, r: Float, steer: Float, gauge: Float?, peak: Float?, ccw: Boolean = true) {
+        if (gauge != null) drawGaugeArc(c, r, 12.dp.toPx(), gauge, peak ?: 0f, from = 90f, ccw = ccw)
+        else drawCircle(Coach.Text2, r, c, style = Stroke(11.dp.toPx()))
+        val a = Math.toRadians(-steer.toDouble())
+        val spoke = if (gauge != null) r - 8.dp.toPx() else r
+        for (t in listOf(0.0, 2.2, -2.2)) {
+            val ang = a + t + Math.PI / 2
+            drawLine(Coach.Text2, c, Offset(c.x + (cos(ang) * spoke).toFloat(), c.y + (sin(ang) * spoke).toFloat()), 10.dp.toPx(), cap = StrokeCap.Round)
+        }
+        drawCircle(Coach.Text2, 13.dp.toPx(), c)
+        drawCircle(Coach.Accent, 13.dp.toPx(), Offset(c.x + (cos(a - Math.PI / 2) * spoke).toFloat(), c.y + (sin(a - Math.PI / 2) * spoke).toFloat()))
+    }
+
+    /**
+     * 270° 원형 게이지: [from]°(0 = 3시, 90 = 6시)에서 시작해 [ccw]면 반시계, 아니면 시계 방향으로 초록 → 노랑 → 빨강.
+     * 바탕 고리는 한 바퀴 전체를 그립니다(핸들 테두리). [peak]엔 흰 눈금.
+     */
+    private fun DrawScope.drawGaugeArc(c: Offset, r: Float, sw: Float, f: Float, peak: Float, from: Float = 135f, ccw: Boolean = false) {
+        val span = 270f; val dir = if (ccw) -1f else 1f
+        val tl = Offset(c.x - r, c.y - r); val sz = Size(2 * r, 2 * r)
+        drawCircle(Coach.Track, r, c, style = Stroke(sw))
+        val n = (60 * f).toInt()
+        for (i in 0 until n) {
+            val t0 = i / 60f; val t1 = (i + 1) / 60f
+            val a0 = from + dir * span * t0; val sweep = dir * (span * (t1 - t0) + 0.6f)
+            drawArc(gaugeColor((t0 + t1) / 2), a0, sweep, false, tl, sz, style = Stroke(sw, cap = if (i == 0) StrokeCap.Round else StrokeCap.Butt))
+        }
+        if (peak > 0.02f) {
+            val ang = Math.toRadians((from + dir * span * peak).toDouble())
+            val p0 = Offset(c.x + (cos(ang) * (r - sw)).toFloat(), c.y + (sin(ang) * (r - sw)).toFloat())
+            val p1 = Offset(c.x + (cos(ang) * (r + sw)).toFloat(), c.y + (sin(ang) * (r + sw)).toFloat())
+            drawLine(Coach.Text, p0, p1, 3.dp.toPx())
+        }
     }
 
     /** 움직이는 것: 지나온 길, 표시, 모범 차, 내 차, 왼쪽 위 속도. */

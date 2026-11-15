@@ -351,6 +351,13 @@ class DriveFormApp : Application(), CarSignals.Listener {
             }
         }, IntentFilter(DEMO_CUE), ContextCompat.RECEIVER_EXPORTED)
 
+        // 다시보기 회전 게이지 비교: adb shell am broadcast --user 10 -a dev.driveform.DEMO_STYLE -p dev.driveform --es gauge A|B
+        ContextCompat.registerReceiver(this, object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                intent.getStringExtra("gauge")?.let { dev.driveform.ui.ReplayStyle.turnGauge = it }
+            }
+        }, IntentFilter("dev.driveform.DEMO_STYLE"), ContextCompat.RECEIVER_EXPORTED)
+
         // 시연 기록 준비. 지금 기록은 처음 한 번만 backup 폴더에 옮겨 두고, restore로 되돌립니다.
         //   adb shell am broadcast --user 10 -a dev.driveform.DEMO_SEED -p dev.driveform [--es mode restore|graduate|badge|start]
         // graduate: 졸업 직전 기록 + 깜빡이를 미리 켠 짧은 시연 주행까지 넣어, 졸업 화면(스티커 떼기)을 바로 띄웁니다.
@@ -385,7 +392,7 @@ class DriveFormApp : Application(), CarSignals.Listener {
                 backup.mkdirs()
                 files.forEach { name -> File(filesDir, name).takeIf { it.exists() }?.copyTo(File(backup, name)) }
             }
-            val demo = DemoHistory.build(System.currentTimeMillis(), finale = finale, badge = badge)
+            val demo = DemoHistory.build(System.currentTimeMillis(), finale = finale, badge = badge, untilYesterday = true)
             store.save(demo.moves)
             store.saveTrips(demo.trips)
         }

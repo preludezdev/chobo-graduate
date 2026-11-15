@@ -78,7 +78,7 @@ object DemoHistory {
      * [badge]면(시연 주행과 함께) 그 시연 주행의 주차로 주차 배지까지 받습니다: 앞의 여덟 번을 한 번에 넣은 걸로 두고,
      * 그 앞 두 번은 고쳐 넣은 걸로 둬서 시연 주행에서 딱 아홉 번째가 됩니다. 졸업 뒤 심화 홈의 배지 축하를 보여 줄 때 씁니다.
      */
-    fun build(now: Long, zone: ZoneId = ZoneId.systemDefault(), seed: Int = 11, finale: Boolean = false, badge: Boolean = false): Result {
+    fun build(now: Long, zone: ZoneId = ZoneId.systemDefault(), seed: Int = 11, finale: Boolean = false, badge: Boolean = false, untilYesterday: Boolean = false): Result {
         val rnd = Random(seed)
         val today = java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
         val first = today.minusDays(DAYS - 1L)
@@ -99,6 +99,8 @@ object DemoHistory {
         }
         // 시연할 때보다 나중 시각의 주행은 넣지 않습니다.
         plans.removeAll { it.date.atTime(it.time).atZone(zone).toInstant().toEpochMilli() > now - LATEST_GAP_MS }
+        // 시연 기록은 어제까지만 둡니다. 오늘 운전은 시연에서 직접 하는 주행이 맡습니다(시연 시각에 따라 오늘 기록이 생겼다 말았다 하지 않게).
+        if (untilYesterday && !finale) plans.removeAll { it.date == today }
         shapeStory(plans, today)
         // 시연에서 볼 최근 주차 두 번은 각을 못 맞춰 앞뒤로 세 번 오가며 넣습니다(초보에게 흔한 장면).
         plans.flatMap { it.steps }.filterIsInstance<Park>().takeLast(2).forEach { it.tries = 3; it.dry = false; it.fast = false }
