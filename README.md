@@ -1,6 +1,8 @@
+
+
 # 초보졸업
 
-https://github.com/user-attachments/assets/28d8bccc-8465-4efd-a512-410162955e2a
+https://github.com/user-attachments/assets/6cc85cea-b0bc-42d0-9e95-cae6abd66cf8
 
 <sub>음악: "Super Friendly" Kevin MacLeod (incompetech.com) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></sub>
 
