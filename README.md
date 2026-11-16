@@ -1,5 +1,9 @@
 # 초보졸업
 
+<video src="https://github.com/preludezdev/chobo-graduate/raw/main/docs/%EC%B4%88%EB%B3%B4%EC%A1%B8%EC%97%85_%EC%8B%9C%EC%97%B0%EC%98%81%EC%83%81.mp4" poster="docs/screens/video_thumb.jpg" controls width="100%"></video>
+
+[![시연 영상 보기 · 2분 4초](docs/screens/video_thumb.jpg)](docs/%EC%B4%88%EB%B3%B4%EC%A1%B8%EC%97%85_%EC%8B%9C%EC%97%B0%EC%98%81%EC%83%81.mp4)
+
 **차가 알려 주는 깜빡이·핸들·기어·브레이크 신호로 운전을 장면마다 돌아보고, 아쉬웠던 장면만 실제 지도 위에서 내 차로 다시 보여 주는 차 안의 AI 운전 코치입니다.** 기본기 네 가지가 몸에 붙으면 초보를 졸업합니다.
 
 현대자동차그룹 차량용 앱 개발 공모전 출품작 · Pleos Connect(AAOS) 앱
