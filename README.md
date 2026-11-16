@@ -1,6 +1,6 @@
 # 초보졸업
 
-[![시연 영상 보기 · 2분 4초](docs/screens/video_thumb.jpg)](docs/%EC%B4%88%EB%B3%B4%EC%A1%B8%EC%97%85_%EC%8B%9C%EC%97%B0%EC%98%81%EC%83%81.mp4)
+https://github.com/user-attachments/assets/28d8bccc-8465-4efd-a512-410162955e2a
 
 <sub>음악: "Super Friendly" Kevin MacLeod (incompetech.com) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></sub>
 
