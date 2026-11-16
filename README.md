@@ -1,8 +1,8 @@
 # 초보졸업
 
-<video src="https://github.com/preludezdev/chobo-graduate/raw/main/docs/%EC%B4%88%EB%B3%B4%EC%A1%B8%EC%97%85_%EC%8B%9C%EC%97%B0%EC%98%81%EC%83%81.mp4" poster="docs/screens/video_thumb.jpg" controls width="100%"></video>
-
 [![시연 영상 보기 · 2분 4초](docs/screens/video_thumb.jpg)](docs/%EC%B4%88%EB%B3%B4%EC%A1%B8%EC%97%85_%EC%8B%9C%EC%97%B0%EC%98%81%EC%83%81.mp4)
+
+<sub>음악: "Super Friendly" Kevin MacLeod (incompetech.com) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></sub>
 
 **차가 알려 주는 깜빡이·핸들·기어·브레이크 신호로 운전을 장면마다 돌아보고, 아쉬웠던 장면만 실제 지도 위에서 내 차로 다시 보여 주는 차 안의 AI 운전 코치입니다.** 기본기 네 가지가 몸에 붙으면 초보를 졸업합니다.
 
@@ -112,4 +112,5 @@ app/src/main/assets/
 ## 출처
 
 - 지도 데이터: © OpenStreetMap contributors (ODbL)
+- 시연 영상 배경음악: "Super Friendly" Kevin MacLeod (incompetech.com), Licensed under [Creative Commons: By Attribution 4.0](https://creativecommons.org/licenses/by/4.0/)
 - 기준값: 깜빡이 30m는 도로교통법 시행령 별표 2, 빗길 20% 감속은 도로교통법 시행규칙 제19조
